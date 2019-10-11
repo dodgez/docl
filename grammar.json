@@ -1,0 +1,200 @@
+{
+  "rules": [
+    {
+      "name": "program",
+      "expr": "(EOL)* line+"
+    },
+    {
+      "name": "line",
+      "expr": "(label|jump|call|RET|compare|move|summation|multiply|bitwise|negate|shift|push|pop|interrupt|NOP) (EOL)+"
+    },
+    {
+      "name": "label",
+      "expr": "LABEL ID COLON"
+    },
+    {
+      "name": "jump",
+      "expr": "JUMP ID"
+    },
+    {
+      "name": "call",
+      "expr": "CALL ID"
+    },
+    {
+      "name": "compare",
+      "expr": "CMP REGISTER COMMA (REGISTER|number)"
+    },
+    {
+      "name": "move",
+      "expr": "MOV (REGISTER|address) COMMA (REGISTER|address|number)"
+    },
+    {
+      "name": "summation",
+      "expr": "SUMMATION REGISTER COMMA (REGISTER|number)"
+    },
+    {
+      "name": "multiply",
+      "expr": "MULTIPLY (REGISTER|number)"
+    },
+    {
+      "name": "bitwise",
+      "expr": "BITWISE REGISTER COMMA (REGISTER|number)"
+    },
+    {
+      "name": "negate",
+      "expr": "NEG REGISTER"
+    },
+    {
+      "name": "shift",
+      "expr": "SHIFT REGISTER COMMA (REGISTER|number)"
+    },
+    {
+      "name": "push",
+      "expr": "PUSH (REGISTER|number)"
+    },
+    {
+      "name": "pop",
+      "expr": "POP REGISTER"
+    },
+    {
+      "name": "interrupt",
+      "expr": "INT number"
+    },
+    {
+      "name": "sum_address",
+      "expr": "SUM number"
+    },
+    {
+      "name": "number",
+      "expr": "(HEXNUM|NUMBER)"
+    },
+    {
+      "name": "address",
+      "expr": "SIZE LSQUARE REGISTER (sum_address)? RSQUARE"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "LABEL",
+      "expr": "label"
+    },
+    {
+      "name": "JUMP",
+      "expr": "(jmp|jg|jge|jl|jle|je)"
+    },
+    {
+      "name": "CALL",
+      "expr": "call"
+    },
+    {
+      "name": "RET",
+      "expr": "ret"
+    },
+    {
+      "name": "CMP",
+      "expr": "cmp"
+    },
+    {
+      "name": "MOV",
+      "expr": "mov"
+    },
+    {
+      "name": "SUMMATION",
+      "expr": "(add|sub)"
+    },
+    {
+      "name": "MULTIPLY",
+      "expr": "(mul|div)"
+    },
+    {
+      "name": "BITWISE",
+      "expr": "(and|or|xor)"
+    },
+    {
+      "name": "NEG",
+      "expr": "neg"
+    },
+    {
+      "name": "SHIFT",
+      "expr": "(shl|shr)"
+    },
+    {
+      "name": "PUSH",
+      "expr": "push"
+    },
+    {
+      "name": "POP",
+      "expr": "pop"
+    },
+    {
+      "name": "INT",
+      "expr": "int"
+    },
+    {
+      "name": "COMMA",
+      "expr": ","
+    },
+    {
+      "name": "SUM",
+      "expr": "\\+"
+    },
+    {
+      "name": "SIZE",
+      "expr": "(byte|word)"
+    },
+    {
+      "name": "LSQUARE",
+      "expr": "\\["
+    },
+    {
+      "name": "RSQUARE",
+      "expr": "\\]"
+    },
+    {
+      "name": "REGISTER",
+      "expr": "(ax|bx|cx|dx|si|di)"
+    },
+    {
+      "name": "NOP",
+      "expr": "nop"
+    },
+    {
+      "name": "HEXNUM",
+      "expr": "HEXID[0-9a-fA-F]{1,4}"
+    },
+    {
+      "name": "HEXID",
+      "expr": "0x"
+    },
+    {
+      "name": "NUMBER",
+      "expr": "(DIGIT)+"
+    },
+    {
+      "name": "DIGIT",
+      "expr": "[0-9]"
+    },
+    {
+      "name": "ID",
+      "expr": "[a-zA-Z]+[a-zA-Z_]*"
+    },
+    {
+      "name": "EOL",
+      "expr": "\n+"
+    },
+    {
+      "name": "COLON",
+      "expr": ":"
+    },
+    {
+      "name": "COMMENT",
+      "expr": "#.*\n?",
+      "ignore": true
+    },
+    {
+      "name": "WHITESPACE",
+      "expr": "[ \t\r]+",
+      "ignore": true
+    }
+  ]
+}

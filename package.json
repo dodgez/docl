@@ -1,0 +1,17 @@
+{
+  "name": "docl",
+  "version": "1.0.0",
+  "description": "A compiler for do -- an assembly inspired programming language",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js --interactive run.as"
+  },
+  "keywords": [],
+  "author": "Zachary Dodge",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^3.0.2",
+    "lngr": "2.0.3"
+  }
+}

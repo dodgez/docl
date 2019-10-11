@@ -5,13 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js --interactive run.as"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "Zachary Dodge",
   "license": "MIT",
   "dependencies": {
     "commander": "^3.0.2",
-    "lngr": "2.0.3"
+    "lngr": "^2.0.3"
   }
 }

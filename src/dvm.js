@@ -258,7 +258,7 @@ class DVM {
       value = parseInt(number.token);
     }
 
-    if (value > this.max_memory) throw new Error("Value too large: ${value}");
+    if (value > this.max_memory) throw new Error(`Value too large: ${value}`);
     return value;
   }
 

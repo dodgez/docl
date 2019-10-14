@@ -2,8 +2,8 @@ const program = require('commander');
 const fs = require('fs');
 const lngr = require('lngr');
 
-const Interpreter = require('./interpreter');
-const DVM = require('./dvm');
+const Interpreter = require('./src/interpreter');
+const DVM = require('./src/dvm');
 
 let input_file;
 let grammar_file = './grammar.json';

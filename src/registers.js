@@ -23,7 +23,7 @@ class Registers {
   getStackPointer() {
     return this["esp"];
   }
-  setStackRegister(value) {
+  setStackPointer(value) {
     this["esp"] = value;
   }
 

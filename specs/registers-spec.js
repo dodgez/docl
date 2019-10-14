@@ -20,4 +20,10 @@ describe('Registers', function () {
   it('sets the stack pointer correctly', function () {
     expect(registers.getStackPointer()).to.equal(0xFFFFFFFF);
   });
+
+  it('changes stack pointer accordingly', function () {
+    registers["esp"] -= 4;
+
+    expect(registers.getStackPointer()).to.equal(0xFFFFFFFF - 4);
+  });
 });

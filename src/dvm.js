@@ -1,6 +1,6 @@
 const Registers = require('./registers');
 
-class VM {
+class DVM {
   constructor(code) {
     this.code = code;
   }
@@ -331,4 +331,4 @@ class VM {
   }
 }
 
-module.exports = VM;
+module.exports = DVM;

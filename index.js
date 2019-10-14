@@ -3,7 +3,7 @@ const fs = require('fs');
 const lngr = require('lngr');
 
 const Interpreter = require('./interpreter');
-const VM = require('./vm');
+const DVM = require('./dvm');
 
 let input_file;
 let grammar_file = './grammar.json';
@@ -62,6 +62,6 @@ if (program.interactive) {
   let interpreter = new Interpreter(parsed.children, lexemes, rules);
   interpreter.start();
 } else {
-  let vm = new VM(parsed.children);
-  vm.run_and_stop();
+  let dvm = new DVM(parsed.children);
+  dvm.run_and_stop();
 }

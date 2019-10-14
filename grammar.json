@@ -140,7 +140,7 @@
     },
     {
       "name": "SIZE",
-      "expr": "(byte|word)"
+      "expr": "(byte|word|dword)"
     },
     {
       "name": "LSQUARE",
@@ -152,7 +152,7 @@
     },
     {
       "name": "REGISTER",
-      "expr": "(ax|bx|cx|dx|si|di)"
+      "expr": "(eax|ebx|ecx|edx|esi|edi)"
     },
     {
       "name": "NOP",
@@ -160,7 +160,7 @@
     },
     {
       "name": "HEXNUM",
-      "expr": "HEXID[0-9a-fA-F]{1,4}"
+      "expr": "HEXID[0-9a-fA-F]{1,8}"
     },
     {
       "name": "HEXID",

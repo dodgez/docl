@@ -7,13 +7,11 @@ class VM {
 
   initialize() {
     this.labels = {};
-    this.registers = new Registers();
     this.call_index = 0;
     this.memory = [];
-
-    while(this.memory.length < 0x10000) {
-      this.memory.push(0);
-    }
+    this.max_memory = 0xFFFFFFFF;
+    this.max_type = "dword";
+    this.registers = new Registers(this.max_memory);
 
     console.log("VM initialized");
   }
@@ -27,6 +25,8 @@ class VM {
 
   createLabels() {
     for (let i = 0; i < this.code.length; ++i) {
+      if (!this.code[i].children.length) { continue; }
+
       switch (this.code[i].children[0].type) {
         case "label":
           this.labels[this.code[i].children[0].children[1].token] = i;
@@ -36,10 +36,10 @@ class VM {
   }
 
   run(start_index = 0) {
-    let lines = this.code;
+    for (let i = start_index; i < this.code.length; ++i) {
+      if (!this.code[i].children.length) { continue; }
 
-    for (let i = start_index; i < lines.length; ++i) {
-      let line = lines[i].children[0];
+      let line = this.code[i].children[0];
       let type = line.children[0];
       let value;
 
@@ -60,7 +60,12 @@ class VM {
           let other = line.children[3];
           switch (type.token) {
             case "add":
-              this.registers[dest.token] = this.getValue(dest) + this.getValue(other);
+              if (this.getValue(dest) + this.getValue(other) > this.max_memory) {
+                this.registers.carry_flag = 1;
+              } else {
+                this.registers.carry_flag = 0;
+              }
+              this.registers[dest.token] = ((this.getValue(dest) + this.getValue(other)) & this.max_memory) >>> 0;
               break;
             case "sub":
               this.registers[dest.token] = this.getValue(dest) - this.getValue(other);
@@ -74,11 +79,16 @@ class VM {
           value = this.getValue(line.children[1]);
           switch (type.token) {
             case "mul":
-              this.registers["ax"] = (this.registers["ax"] * value) & 0xFFFF;
+                if (this.registers.getFirstParamRegister() * value > this.max_memory) {
+                  this.registers.carry_flag = 1;
+                } else {
+                  this.registers.carry_flag = 0;
+                }
+              this.registers.setFirstParamRegister(((this.registers.getFirstParamRegister() * value) & this.max_memory) >>> 0);
               break;
             case "div":
-              this.registers["dx"] = this.registers["ax"] % value;
-              this.registers["ax"] = Math.floor(this.registers["ax"] / value);
+              this.registers.setSecondParamRegister(this.registers.getFirstParamRegister() % value);
+              this.registers.setFirstParamRegister(Math.floor(this.registers.getFirstParamRegister() / value));
               break;
           }
           break;
@@ -97,18 +107,18 @@ class VM {
           }
           break;
         case "negate":
-          this.registers[line.children[1].token] = 0xFFFF - this.registers[line.children[1].token];
+          this.registers[line.children[1].token] = this.max_memory - this.registers[line.children[1].token];
           break;
         case "push":
           value = this.getValue(line.children[1]);
-          this.registers["sp"] -= 2;
-          if (this.registers["sp"] < 0) throw new Error("Ran out of memory");
-          this.writeAddress(this.registers["sp"], value, "word");
+          this.registers.setStackRegister(this.registers.getStackRegister() - 2);
+          if (this.registers.getStackRegister() < 0) throw new Error("Ran out of memory");
+          this.writeAddress(this.registers.getStackRegister(), value, this.max_type);
           break;
         case "pop":
-          if (this.registers["sp"] > 0x10000-2) throw new Error("Nothing to pop");
-          this.registers[line.children[1].token] = this.readAddress(this.registers["sp"], "word");
-          this.registers["sp"] += 2;
+          if (this.registers.getStackRegister() > this.max_memory-1) throw new Error("Nothing to pop");
+          this.registers[line.children[1].token] = this.readAddress(this.registers.getStackRegister(), this.max_type);
+          this.registers.setStackRegister(this.registers.getStackRegister() + 2);
           break;
         case "call":
           this.call_index = i;
@@ -131,7 +141,11 @@ class VM {
         case "shift":
           value = this.getValue(line.children[1]);
           let shift = this.getValue(line.children[3]);
-          value = (value * 2 ** shift) & 0xFFFF;
+          if (line.children[0].token == "shr") {
+            value = (value >>> shift) & this.max_memory;
+          } else {
+            value = ((value << shift) & this.max_memory) >>> 0;
+          }
           this.registers[line.children[1].token] = value;
           break;
         case "interrupt":
@@ -143,12 +157,12 @@ class VM {
               console.log(this.registers);
               break;
             case 1:
-              start = this.registers["si"];
-              length = this.registers["ax"];
+              start = this.registers.getFirstStringIndex();
+              length = this.registers.getFirstParamRegister();
               console.log(`${this.memory.slice(start, start + length).join(' ')}`);
               break;
             case 2:
-              start = this.registers["si"];
+              start = this.registers.getFirstStringIndex();
 
               let data = '';
               let char = this.readMemory(start);
@@ -213,6 +227,8 @@ class VM {
         return this.readMemory(address);
       case "word":
         return this.readMemory(address) * 0x100 + this.readMemory(address + 1);
+      case "dword":
+        return this.readMemory(address) * 0x1000000 + this.readMemory(address + 1) * 0x10000 + this.readAddress(address + 2, "word");
     }
   }
 
@@ -222,9 +238,14 @@ class VM {
         this.writeMemory(address, value & 0xFF);
         break;
       case "word":
-        this.writeMemory(address, value & 0xFF00);
+        this.writeMemory(address, (value & 0xFF00) >> 8);
         this.writeMemory(address + 1, value & 0xFF);
         break;
+      case "dword":
+          this.writeMemory(address, (value >>> 24) & 0xFF);
+          this.writeMemory(address + 1, (value >>> 16) & 0xFF);
+          this.writeAddress(address + 2, value & 0xFFFF, "word");
+          break;
     }
   }
 
@@ -236,13 +257,34 @@ class VM {
     }
     return base_address;
   }
-
+  
   readMemory(address) {
-    return this.memory[address];
+    for (let chunk of this.memory) {
+      if (chunk.address <= address && chunk.address + chunk.data.length >= address) {
+        let diff = address - chunk.address;
+        return chunk.data[diff];
+      }
+    }
+    return 0;
   }
 
-  writeMemory(address, value) {
-    this.memory[address] = value;
+  writeMemory(address, byte) {
+    for (let chunk of this.memory) {
+      if (chunk.address <= address && chunk.address + chunk.data.length >= address) {
+        let diff = address - chunk.address;
+        chunk.data[diff] = byte;
+        return;
+      }
+      if (address >= chunk.address - 0xFF && address < chunk.address) {
+        let diff = chunk.address - address;
+        let new_memory  = [byte];
+        while (new_memory.length < diff) { new_memory.push(0); }
+        chunk.data = new_memory.concat(chunk.data);
+        chunk.address = address;
+        return;
+      }
+    }
+    this.memory.push({address, data: [byte]})
   }
 
   getValue(node) {
@@ -267,7 +309,7 @@ class VM {
       value = parseInt(number.token);
     }
 
-    if (value > 0xFFFF) throw new Error("Value too large: ${value}");
+    if (value > this.max_memory) throw new Error("Value too large: ${value}");
     return value;
   }
 

@@ -1,11 +1,11 @@
 const lngr = require('lngr');
 const readline = require('readline');
 
-const VM = require('./vm');
+const DVM = require('./dvm');
 
 class Interpreter {
   constructor(initial_code, lexemes, rules) {
-    this.vm = new VM(initial_code);
+    this.dvm = new DVM(initial_code);
     this.lexemes = lexemes;
     this.rules = rules;
     this.running = true;
@@ -13,10 +13,10 @@ class Interpreter {
   }
 
   start() {
-    this.vm.initialize();
-    this.vm.createLabels();
-    this.vm.run();
-    this.last_run_line = this.vm.code.length;
+    this.dvm.initialize();
+    this.dvm.createLabels();
+    this.dvm.run();
+    this.last_run_line = this.dvm.code.length;
 
     let rl = readline.createInterface({
       input: process.stdin,
@@ -36,14 +36,14 @@ class Interpreter {
         parsed = this.rules[1].parse(lngr.utils.getTokenStream(tokens));
 
         if (parsed.children[0].type == 'interrupt') {
-          switch (this.vm.parseNumber(parsed.children[0].children[1])) {
+          switch (this.dvm.parseNumber(parsed.children[0].children[1])) {
             case 255:
               this.running = !this.running;
               run_line = false;
               if (this.running) {
-                this.vm.run(this.last_run_line);
+                this.dvm.run(this.last_run_line);
               }
-              this.last_run_line = this.vm.code.length;
+              this.last_run_line = this.dvm.code.length;
           }
         }
       } catch (e) {
@@ -51,17 +51,17 @@ class Interpreter {
         run_line = false;
       }
       if (run_line) {
-        this.vm.code.push(parsed);
+        this.dvm.code.push(parsed);
 
         if (this.running) {
-          this.vm.run(this.last_run_line);
+          this.dvm.run(this.last_run_line);
           this.last_run_line++;
         }
       }
       rl.prompt();
     }).on('SIGINT', () => {
       console.log("^C");
-      this.vm.stop();
+      this.dvm.stop();
       process.exit(0)
     });
   }

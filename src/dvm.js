@@ -113,14 +113,14 @@ class DVM {
           break;
         case "push":
           value = this.getValue(line.children[1]);
-          this.registers.setStackPointer(this.registers.getStackPointer() - 2);
+          this.registers.setStackPointer(this.registers.getStackPointer() - 4);
           if (this.registers.getStackPointer() < 0) throw new Error("Ran out of memory");
           this.memory.writeAddress(this.registers.getStackPointer(), value, this.max_type);
           break;
         case "pop":
           if (this.registers.getStackPointer() > this.max_memory - 1) throw new Error("Nothing to pop");
           this.registers[line.children[1].token] = this.memory.readAddress(this.registers.getStackPointer(), this.max_type);
-          this.registers.setStackPointer(this.registers.getStackPointer() + 2);
+          this.registers.setStackPointer(this.registers.getStackPointer() + 4);
           break;
         case "call":
           this.call_index = i;

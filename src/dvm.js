@@ -98,13 +98,13 @@ class DVM {
           value = this.getValue(line.children[3]);
           switch (type.token) {
             case "and":
-              this.registers[line.children[1].token] = this.getValue(line.children[1]) & value;
+              this.registers[line.children[1].token] = (this.getValue(line.children[1]) & value) >>> 0;
               break;
             case "or":
-              this.registers[line.children[1].token] = this.getValue(line.children[1]) | value;
+              this.registers[line.children[1].token] = (this.getValue(line.children[1]) | value) >>> 0;
               break;
             case "xor":
-              this.registers[line.children[1].token] = this.getValue(line.children[1]) ^ value;
+              this.registers[line.children[1].token] = (this.getValue(line.children[1]) ^ value) >>> 0;
               break;
           }
           break;

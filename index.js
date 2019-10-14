@@ -60,7 +60,8 @@ let parsed = lngr.parser.parse(rules, lngr.utils.getTokenStream(tokens));
 
 if (program.interactive) {
   let interpreter = new Interpreter(parsed.children, lexemes, rules);
-  interpreter.start();
+  interpreter.startDVM();
+  interpreter.startListening();
 } else {
   let dvm = new DVM(parsed.children);
   dvm.run_and_stop();

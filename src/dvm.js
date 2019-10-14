@@ -7,6 +7,12 @@ class DVM {
   }
 
   initialize() {
+    this.reset();
+
+    console.log("VM initialized");
+  }
+
+  reset() {
     this.labels = {};
     this.call_index = 0;
     this.max_memory = 0xFFFFFFFF;
@@ -14,8 +20,6 @@ class DVM {
     this.memory = new MemoryController(this.max_memory);
     
     this.registers = new Registers(this.max_memory);
-
-    console.log("VM initialized");
   }
 
   run_and_stop() {

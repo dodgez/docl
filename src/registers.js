@@ -20,7 +20,7 @@ class Registers {
     this["eax"] = value;
   }
 
-  getStackRegister() {
+  getStackPointer() {
     return this["esp"];
   }
   setStackRegister(value) {

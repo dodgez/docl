@@ -31,6 +31,7 @@ class Interpreter {
             this.running = !this.running;
             run_line = false;
             if (this.running) {
+              this.dvm.createLabels();
               this.dvm.run(this.last_run_line);
             }
             this.last_run_line = this.dvm.code.length;

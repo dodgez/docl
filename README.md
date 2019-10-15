@@ -4,7 +4,7 @@
 
 This is a command line tool to run code for the `do` programming language.
 
-The do programming language is a small programming language that I wrote as an example language that is parseable by my [lngr](https://www.npmjs.com/package/lngr) library.
+The `do` programming language is a small programming language that I wrote as an example language that is parseable by my lngr library ([npm registry](https://www.npmjs.com/package/lngr) and [github repository](https://github.com/dodgez/lngr)).
 The language specification is inspired by the simplicity of 32-bit assembly language code with Intel syntax.
 _Note: `node` has a default maximum JavaScript heap allocation size.
 See [this stackoverflow question](https://stackoverflow.com/questions/34356012/how-to-increase-nodejs-default-memory) to change how much memory it will allow._

@@ -14,6 +14,6 @@ It also has an _interactive mode_, where the user can type lines of `do` code an
 - To see some example code, check out [sample.as](https://github.com/dodgez/docl/blob/master/sample.as).
 - To run code from a file, pass the filename as an argument to `node index.js`.
 - To run in interactive mode, pass the `-i` or `--interactive` flag, optionally with a file to run beforehand.
+- To build precompiled binaries, run `npm run build` in the root directory.
 
-Pre-compiled binaries can be found in the `bin/` directory.
-To rebuild these binaries, run `npm run build` in the root directory.
+Go to the [releases](https://github.com/dodgez/docl/releases) tab to download precompiled binaries.

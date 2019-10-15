@@ -1,7 +1,7 @@
 {
   "name": "docl",
   "version": "2.2.0",
-  "description": "A compiler for do -- an assembly inspired programming language",
+  "description": "An interpreter for do -- an assembly inspired programming language",
   "main": "index.js",
   "scripts": {
     "build": "pkg index.js --out-path bin --options max_old_space_size=4096",

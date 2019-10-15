@@ -8,5 +8,5 @@ This implementation uses a `dvm` (do virtual machine) to execute the code line b
 
 - To learn more about the syntax of this language, check out the token and rule definitions in [grammar.json](https://github.com/dodgez/docl/blob/master/grammar.json).
 - To see some example code, check out [sample.as](https://github.com/dodgez/docl/blob/master/sample.as).
-- To run code from a file, pass the filename as an argument to `npm start` or `node index.js`.
+- To run code from a file, pass the filename as an argument to `node index.js`.
 - To run in interactive mode, pass the `-i` or `--interactive` flag, optionally with a file to run beforehand.

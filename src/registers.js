@@ -20,6 +20,13 @@ class Registers {
     this["eax"] = value;
   }
 
+  getSecondParamRegister() {
+    return this["edx"];
+  }
+  setSecondParamRegister(value) {
+    this["edx"] = value;
+  }
+
   getStackPointer() {
     return this["esp"];
   }
@@ -29,10 +36,6 @@ class Registers {
 
   getFirstStringIndex() {
     return this["esi"];
-  }
-
-  setSecondParamRegister(value) {
-    this["edx"] = value;
   }
 }
 

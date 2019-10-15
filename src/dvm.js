@@ -166,9 +166,10 @@ class DVM {
             case 1:
               start = this.registers.getFirstStringIndex();
               length = this.registers.getFirstParamRegister();
+              type = this.registers.getSecondParamRegister();
               data = [];
-              for (let i = 0; i < length; ++i) {
-                data.push(this.memory.readMemory(start + i));
+              for (let i = 0; i < length*(2**type); i += 2**type) {
+                data.push(this.memory.readAddress(start + i, ['byte', 'word', 'dword'][type]));
               }
               console.log(data.join(' '));
               break;

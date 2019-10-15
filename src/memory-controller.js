@@ -34,11 +34,12 @@ class MemoryController {
 
   readMemory(address) {
     for (let chunk of this.memory) {
-      if (chunk.address <= address && chunk.address + chunk.data.length >= address) {
+      if (chunk.address <= address && chunk.address + chunk.data.length > address) {
         let diff = address - chunk.address;
         return chunk.data[diff];
       }
     }
+
     return 0;
   }
 

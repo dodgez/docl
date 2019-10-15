@@ -1,9 +1,10 @@
 {
   "name": "docl",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A compiler for do -- an assembly inspired programming language",
   "main": "index.js",
   "scripts": {
+    "build": "pkg index.js --out-path bin --options max_old_space_size=4096",
     "test": "mocha ./specs/**/*-spec.js",
     "start": "node --interactive index.js"
   },
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "mocha": "^6.2.1"
+    "mocha": "^6.2.1",
+    "pkg": "^4.4.0"
   }
 }

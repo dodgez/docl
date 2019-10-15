@@ -1,5 +1,7 @@
 # docl
 
+[![Actions Status](https://github.com/dodgez/docl/workflows/CI/badge.svg)](https://github.com/dodgez/docl/actions)
+
 This is a command line tool to run code for the `do` programming language.
 
 The do programming language is a small programming language that I wrote as an example language that is parseable by my [lngr](https://www.npmjs.com/package/lngr) library.

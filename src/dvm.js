@@ -155,6 +155,7 @@ class DVM {
           this.registers[line.children[1].token] = value;
           break;
         case "interrupt":
+          let data;
           let start;
           let length;
           value = this.getValue(line.children[1]);
@@ -165,17 +166,21 @@ class DVM {
             case 1:
               start = this.registers.getFirstStringIndex();
               length = this.registers.getFirstParamRegister();
-              console.log(`${this.memory.slice(start, start + length).join(' ')}`);
+              data = [];
+              for (let i = 0; i < length; ++i) {
+                data.push(this.memory.readMemory(start + i));
+              }
+              console.log(data.join(' '));
               break;
             case 2:
               start = this.registers.getFirstStringIndex();
 
-              let data = '';
-              let char = this.readMemory(start);
+              data = '';
+              let char = this.memory.readMemory(start);
               while (char != 0) {
                 data += String.fromCharCode(char);
                 start++;
-                char = this.readMemory(start);
+                char = this.memory.readMemory(start);
               }
 
               console.log(data);

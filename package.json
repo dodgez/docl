@@ -1,6 +1,6 @@
 {
   "name": "docl",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "An interpreter for do -- an assembly inspired programming language",
   "main": "index.js",
   "scripts": {

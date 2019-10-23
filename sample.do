@@ -6,7 +6,7 @@ mov ecx, 50
 push ecx
 mov esi, 0
 
-label loop:
+lbl loop:
   mov dword [esi], eax
   push ebx
   push eax
@@ -19,7 +19,7 @@ label loop:
   jle done
   jmp loop
 
-label next:
+lbl next:
   pop eax
   pop ebx
   add eax, ebx
@@ -27,7 +27,7 @@ label next:
   push eax
   ret
 
-label done:
+lbl done:
 mov esi, 0
 pop eax
 mov edx, 2

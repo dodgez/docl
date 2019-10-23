@@ -80,7 +80,7 @@
   "tokens": [
     {
       "name": "LABEL",
-      "expr": "label"
+      "expr": "lbl"
     },
     {
       "name": "JUMP",

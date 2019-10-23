@@ -4,7 +4,7 @@ class Registers {
   }
 
   reset(max_memory) {
-    for (let register of ["eax", "ebx", "ecx", "edx", "esi", "edi"]) {
+    for (let register of ["eax", "ebx", "ecx", "edx", "esi", "edi", "ebp"]) {
       this[register] = 0;
     }
 

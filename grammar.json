@@ -80,7 +80,7 @@
     },
     {
       "name": "JUMP",
-      "expr": "(jmp|jg|jge|jl|jle|je)"
+      "expr": "(jmp|jg|jge|jl|jle|je|jne)"
     },
     {
       "name": "CALL",

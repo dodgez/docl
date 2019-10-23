@@ -152,7 +152,7 @@
     },
     {
       "name": "REGISTER",
-      "expr": "(eax|ebx|ecx|edx|esi|edi)"
+      "expr": "(eax|ebx|ecx|edx|esi|edi|esp|ebp)"
     },
     {
       "name": "NOP",

@@ -22,7 +22,7 @@
     },
     {
       "name": "compare",
-      "expr": "CMP REGISTER COMMA (REGISTER|number)"
+      "expr": "CMP REGISTER COMMA (REGISTER|number|address)"
     },
     {
       "name": "move",

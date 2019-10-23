@@ -22,7 +22,7 @@ describe('DVM', function () {
     });
 
     it('creates labels', function () {
-      interpreter.runLine('label func:');
+      interpreter.runLine('lbl func:');
 
       expect(interpreter.dvm.labels).to.deep.equal({ 'func': interpreter.dvm.code.length - 1 });
     });
@@ -31,14 +31,14 @@ describe('DVM', function () {
       interpreter.runLine('mov eax, 0');
       interpreter.runLine('int 255');
       interpreter.runLine('jmp start');
-      interpreter.runLine('label move:');
+      interpreter.runLine('lbl move:');
       interpreter.runLine('mov eax, 5');
       expect(interpreter.dvm.registers['eax']).to.equal(0);
 
       interpreter.runLine('jmp end');
-      interpreter.runLine('label start:');
+      interpreter.runLine('lbl start:');
       interpreter.runLine('jmp move');
-      interpreter.runLine('label end:');
+      interpreter.runLine('lbl end:');
       interpreter.runLine('int 255');
       expect(interpreter.dvm.registers['eax']).to.equal(5);
     });
@@ -144,12 +144,12 @@ describe('DVM', function () {
       interpreter.runLine('mov eax, 6');
       expect(interpreter.dvm.registers['eax']).to.equal(0);
 
-      interpreter.runLine('label move:');
+      interpreter.runLine('lbl move:');
       interpreter.runLine('mov eax, 5');
       interpreter.runLine('call end');
-      interpreter.runLine('label start:');
+      interpreter.runLine('lbl start:');
       interpreter.runLine('call move');
-      interpreter.runLine('label end:');
+      interpreter.runLine('lbl end:');
       interpreter.runLine('int 255');
       expect(interpreter.dvm.registers['eax']).to.equal(5);
     });
@@ -160,12 +160,12 @@ describe('DVM', function () {
       interpreter.runLine('mov ecx, 0');
       interpreter.runLine('int 255');
       interpreter.runLine('jmp start');
-      interpreter.runLine('label move:');
+      interpreter.runLine('lbl move:');
       interpreter.runLine('mov eax, 5');
       expect(interpreter.dvm.registers['eax']).to.equal(0);
 
       interpreter.runLine('ret');
-      interpreter.runLine('label start:');
+      interpreter.runLine('lbl start:');
       interpreter.runLine('call move');
       interpreter.runLine('mov ebx, 6');
       expect(interpreter.dvm.registers['ebx']).to.equal(0);

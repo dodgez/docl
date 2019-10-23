@@ -282,6 +282,8 @@ class DVM {
         return this.registers.compare_flag <= 0;
       case "je":
         return this.registers.compare_flag == 0;
+      case "jne":
+        return this.registers.compare_flag != 0;
     }
   }
 }

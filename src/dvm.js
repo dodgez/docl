@@ -237,7 +237,11 @@ class DVM {
     let register = address.children[2].token;
     let base_address = this.registers[register];
     if (address.children[3].type == "sum_address") {
-      base_address += this.parseNumber(address.children[3].children[1]);
+      if (address.children[3].children[0].token == "+") {
+        base_address += this.parseNumber(address.children[3].children[1]);
+      } else if (address.children[3].children[0].token == "-") {
+        base_address -= this.parseNumber(address.children[3].children[1]);
+      }
     }
     return base_address;
   }

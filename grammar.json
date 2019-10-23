@@ -14,7 +14,11 @@
     },
     {
       "name": "jump",
-      "expr": "JUMP ID"
+      "expr": "JUMP (ID|number|relative_jump)"
+    },
+    {
+      "name": "relative_jump",
+      "expr": "DOLLARSIGN (sum_address)?"
     },
     {
       "name": "call",
@@ -81,6 +85,10 @@
     {
       "name": "JUMP",
       "expr": "(jmp|jg|jge|jl|jle|je|jne)"
+    },
+    {
+      "name": "DOLLARSIGN",
+      "expr": "\\$"
     },
     {
       "name": "CALL",

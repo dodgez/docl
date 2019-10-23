@@ -55,7 +55,23 @@ class DVM {
           break;
         case "jump":
           if (this.canJump(type.token)) {
-            i = this.labels[line.children[1].token];
+            if (line.children[1].type == "ID") {
+              i = this.labels[line.children[1].token];
+            } else if (line.children[1].type == "number") {
+              i = this.getValue(line.children[1]) - 1;
+            } else if (line.children[1].type == "relative_jump") {
+              let rel = -1;
+              if (line.children[1].children.length > 1) {
+                rel = this.getValue(line.children[1].children[1].children[1]);
+                
+                if (line.children[1].children[1].children[0].token == "-") {
+                  rel = 0 - rel;
+                }
+
+                rel = rel - 1;
+              }
+              i += rel;
+            }
           }
           break;
         case "move":

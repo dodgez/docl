@@ -4,11 +4,12 @@ const lngr = require('lngr');
 
 const Interpreter = require('./src/interpreter');
 const DVM = require('./src/dvm');
+const package = require('./package.json');
 
 let input_file;
 let grammar_file = './grammar.json';
 
-program.version('1.0.0')
+program.version(package.version)
   .arguments('[input file]')
   .option('-i, --interactive')
   .action(function (file) {

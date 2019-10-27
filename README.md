@@ -15,7 +15,6 @@ It also has an _interactive mode_, where the user can type lines of do code and 
 - To learn more about the syntax of this language, check out the token and rule definitions in [grammar.json](https://github.com/dodgez/docl/blob/master/grammar.json).
 - To see some example code, check out [sample.do](https://github.com/dodgez/docl/blob/master/sample.do).
 - To run code from a file, pass the filename as an argument to `node index.js`.
-- To run in interactive mode, pass the `-i` or `--interactive` flag, optionally with a file to run beforehand.
 - To build precompiled binaries, run `npm run build` in the root directory.
 
 Go to the [releases](https://github.com/dodgez/docl/releases) tab to download precompiled binaries.

@@ -398,6 +398,17 @@ describe('DVM', function () {
 
       expect(dvm.registers["eax"]).to.equal(4);
     });
+
+    it('complicated moves', function () {
+      let dvm = createDVM(`
+      mov dword [eax + 4], 8
+      mov ebx, dword [eax + 4]
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers["ebx"]).to.equal(8);
+      expect(dvm.memory.readAddress(4, 'dwrd')).to.equal(8)
+    });
   });
 
   describe('utility', function () {

@@ -16,7 +16,30 @@ function assemble(nodes) {
         labels[node.children[1].token] = start_address + bytes;
         break;
       case "jump":
-        code.push([node.children[0].token, node]);
+        switch (node.children[1].type) {
+          case "ID":
+            code.push([node.children[0].token, node]);
+            break;
+          case "number":
+            address = parseNumber(node.children[1]);
+            code.push([node.children[0].token, address]);
+            break;
+          case "relative_jump":
+            let jump = node.children[1];
+            let rel = 0;
+            if (jump.children.length > 1) {
+              let sum_address = jump.children[1];
+              rel = parseNumber(sum_address.children[1]);
+              if (sum_address.children[0].token == "-") rel = -rel;
+            }
+            let bytes = 0;
+            for (let line of code) {
+              bytes += line.length * 4;
+            }
+            address = start_address + bytes + rel;
+            code.push([node.children[0].token, address]);
+            break;
+        }
         break;
       case "move":
         let dest = node.children[1];
@@ -33,7 +56,7 @@ function assemble(nodes) {
           case "address":
             let source_register = source.children[2].token;
             if (source.children.length > 4) {
-              code.push(["push", source_register]);
+              code.push(["pshr", source_register]);
               let add = source.children[3].children[0].token == "+";
               let num = parseNumber(source.children[3].children[1]);
 
@@ -64,7 +87,7 @@ function assemble(nodes) {
           case "address":
             let dest_register = dest.children[2].token;
             if (dest.children.length > 4) {
-              code.push(["push", dest_register]);
+              code.push(["pshr", dest_register]);
               let add = dest.children[3].children[0].token == "+";
               let num = parseNumber(dest.children[3].children[1]);
 
@@ -123,14 +146,37 @@ function assemble(nodes) {
         if (node.children[1].type == "REGISTER") {
           code.push(["pshr", node.children[1].token]);
         } else {
-          code.push(["pshn", parseNumber(node.children[1])]);
+          code.push(["psh", parseNumber(node.children[1])]);
         }
         break;
       case "pop":
         code.push([node.children[0].token, node.children[1].token]);
         break;
       case "call":
-        code.push([node.children[0].token, node]);
+        switch (node.children[1].type) {
+          case "ID":
+            code.push([node.children[0].token, node]);
+            break;
+          case "number":
+            address = parseNumber(node.children[1]);
+            code.push([node.children[0].token, address]);
+            break;
+          case "relative_jump":
+            let call = node.children[1];
+            let rel = 0;
+            if (call.children.length > 1) {
+              let sum_address = call.children[1];
+              rel = parseNumber(sum_address.children[1]);
+              if (sum_address.children[0].token == "-") rel = -rel;
+            }
+            let bytes = 0;
+            for (let line of code) {
+              bytes += line.length * 4;
+            }
+            address = start_address + bytes + rel;
+            code.push([node.children[0].token, address]);
+            break;
+        }
         break;
       case "RET":
         code.push([node.token]);
@@ -202,22 +248,12 @@ function assemble(nodes) {
       case "je":
       case "jne":
         let node = line[1];
+        if (typeof(node) != "object") {
+          continue;
+        }
         switch (node.children[1].type) {
           case "ID":
             address = labels[node.children[1].token];
-            break;
-          case "number":
-            address = parseNumber(node.children[1]);
-            break;
-          case "relative_jump":
-            let jump = node.children[1];
-            let rel = 0;
-            if (jump.children.length > 1) {
-              let sum_address = jump.children[1];
-              rel = parseNumber(sum_address.children[1]);
-              if (sum_address.children[0].token == "-") rel = -rel;
-            }
-            address = start_address + index + rel;
             break;
         }
         line[1] = address;

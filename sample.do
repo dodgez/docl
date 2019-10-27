@@ -32,3 +32,4 @@ mov esi, 0
 pop eax
 mov edx, 2
 int 1
+hlt

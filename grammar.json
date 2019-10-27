@@ -22,7 +22,7 @@
     },
     {
       "name": "call",
-      "expr": "CALL ID"
+      "expr": "CALL (ID|number|address)"
     },
     {
       "name": "compare",
@@ -30,7 +30,7 @@
     },
     {
       "name": "move",
-      "expr": "MOV (REGISTER|address) COMMA (REGISTER|address|number)"
+      "expr": "MOV (REGISTER|address) COMMA (REGISTER|number|address)"
     },
     {
       "name": "summation",

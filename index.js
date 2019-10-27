@@ -2,8 +2,8 @@ const program = require('commander');
 const fs = require('fs');
 const lngr = require('lngr');
 
-const Interpreter = require('./src/interpreter');
 const DVM = require('./src/dvm');
+const Assembler = require('./src/assembler');
 const package = require('./package.json');
 
 let input_file;
@@ -11,7 +11,6 @@ let grammar_file = './grammar.json';
 
 program.version(package.version)
   .arguments('[input file]')
-  .option('-i, --interactive')
   .action(function (file) {
     input_file = file;
   });
@@ -19,26 +18,22 @@ program.version(package.version)
 program.parse(process.argv);
 
 let code;
-if (!program.interactive || (program.interactive && typeof input_file !== 'undefined')) {
-  if (typeof input_file === 'undefined') {
-    console.error('No input file specified!');
-    process.exit(1);
-  }
-
-  if (!fs.existsSync(input_file)) {
-    console.error('Input file does not exist!');
-    process.exit(1);
-  }
-
-  if (fs.lstatSync(input_file).isDirectory()) {
-    console.error('Input is not a file!');
-    process.exit(1);
-  }
-
-  code = fs.readFileSync(input_file, 'utf8') + '\n';
-} else {
-  code = 'nop\n'
+if (typeof input_file === 'undefined') {
+  console.error('No input file specified!');
+  process.exit(1);
 }
+
+if (!fs.existsSync(input_file)) {
+  console.error('Input file does not exist!');
+  process.exit(1);
+}
+
+if (fs.lstatSync(input_file).isDirectory()) {
+  console.error('Input is not a file!');
+  process.exit(1);
+}
+
+code = fs.readFileSync(input_file, 'utf8') + '\n';
 
 if (!fs.existsSync(grammar_file)) {
   console.error('Grammar file is missing!');
@@ -58,12 +53,8 @@ let lexemes = lngr.lexer.formatTokens(grammar.tokens);
 let tokens = lngr.lexer.lex(lexemes, lngr.utils.getStringStream(code));
 let rules = lngr.parser.formatRules(grammar.rules);
 let parsed = lngr.parser.parse(rules, lngr.utils.getTokenStream(tokens));
+let bytes = Assembler(parsed.children);
+let dvm = new DVM(bytes);
 
-if (program.interactive) {
-  let interpreter = new Interpreter(parsed.children, lexemes, rules);
-  interpreter.startDVM();
-  interpreter.startListening();
-} else {
-  let dvm = new DVM(parsed.children);
-  dvm.run_and_stop();
-}
+dvm.initialize();
+dvm.runBytes();

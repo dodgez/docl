@@ -1,4 +1,4 @@
-function assemble(nodes) {
+function assemble(nodes, get_bytes=true) {
   let start_address = 0x80000000;
   let labels = {};
   let code = [];
@@ -261,7 +261,7 @@ function assemble(nodes) {
     }
   }
 
-  return getCodeBytes(code);
+  return get_bytes ? getCodeBytes(code) : code.map(ls => ls.join(' '));
 }
 
 function getCodeBytes(code) {

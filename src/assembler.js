@@ -273,7 +273,7 @@ function getCodeBytes(code) {
         case "string":
           bytes.push(piece.charCodeAt(0));
           bytes.push(piece.charCodeAt(1));
-          bytes.push(piece.charCodeAt(2));
+          bytes.push(piece.charCodeAt(2) ? piece.charCodeAt(2) : 13);
           bytes.push(piece.charCodeAt(3) ? piece.charCodeAt(3) : 13);
           break;
         case "number":

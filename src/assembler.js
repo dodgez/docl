@@ -99,9 +99,9 @@ function assemble(nodes) {
             }
 
             let size = dest.children[0].token;
-              if (size == "dword") {
-                size = "dwrd";
-              }
+            if (size == "dword") {
+              size = "dwrd";
+            }
             if (source.type == "address") {
               throw new Error("Cannot move address to address");
             } else if (source.type == "number") {
@@ -248,7 +248,7 @@ function assemble(nodes) {
       case "je":
       case "jne":
         let node = line[1];
-        if (typeof(node) != "object") {
+        if (typeof (node) != "object") {
           continue;
         }
         switch (node.children[1].type) {

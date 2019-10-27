@@ -11,7 +11,7 @@ class Registers {
     }
 
     this["esp"] = max_memory;
-    this["eip"] = (max_memory + 1)/2;
+    this["eip"] = (max_memory + 1) / 2;
     this.compare_flag = 0;
     this.carry_flag = 0;
   }

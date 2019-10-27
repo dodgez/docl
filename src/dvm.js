@@ -10,7 +10,7 @@ class DVM {
     this.reset();
 
     for (let index = 0; index < this.code.length; ++index) {
-      this.memory.writeMemory((this.max_memory+1)/2+index, this.code[index]);
+      this.memory.writeMemory((this.max_memory + 1) / 2 + index, this.code[index]);
     }
   }
 
@@ -19,7 +19,7 @@ class DVM {
     this.max_type = "dwrd";
     this.max_type_size = 4;
     this.memory = new MemoryController(this.max_memory);
-    
+
     this.registers = new Registers(this.max_memory, this.max_type_size);
   }
 
@@ -291,7 +291,7 @@ class DVM {
               length = this.registers.getFirstParamRegister();
               type = this.registers.getSecondParamRegister();
               data = [];
-              for (let i = 0; i < length*(2**type); i += 2**type) {
+              for (let i = 0; i < length * (2 ** type); i += 2 ** type) {
                 data.push(this.memory.readAddress(start + i, ['byte', 'word', 'dwrd'][type]));
               }
               console.log(data.join(' '));

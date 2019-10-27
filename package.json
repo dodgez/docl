@@ -1,12 +1,12 @@
 {
   "name": "docl",
-  "version": "3.0.1",
+  "version": "4.0.0",
   "description": "An interpreter for do -- an assembly inspired programming language",
   "main": "index.js",
   "scripts": {
     "build": "pkg index.js --out-path bin --options max_old_space_size=4096",
     "test": "mocha ./specs/**/*-spec.js",
-    "start": "node --interactive index.js"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "Zachary Dodge",

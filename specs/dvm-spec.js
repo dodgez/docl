@@ -3,246 +3,411 @@ const fs = require('fs');
 const lngr = require('lngr');
 
 const DVM = require('./../src/dvm');
-const Interpreter = require('./../src/interpreter');
+const Assemble = require('./../src/assembler');
 
 describe('DVM', function () {
   describe('machine', function () {
-    let interpreter;
-
-    before(function () {
+    function createDVM(code) {
       let grammar = JSON.parse(fs.readFileSync('./grammar.json', 'utf8'));
       let lexemes = lngr.lexer.formatTokens(grammar.tokens);
+      let tokens = lngr.lexer.lex(lexemes, lngr.utils.getStringStream(code));
       let rules = lngr.parser.formatRules(grammar.rules);
+      let parsed = lngr.parser.parse(rules, lngr.utils.getTokenStream(tokens));
 
-      interpreter = new Interpreter([], lexemes, rules);
+      let dvm = new DVM(Assemble(parsed.children));
+      dvm.initialize();
+      return dvm;
+    }
+
+    it('stops', function () {
+      let dvm = createDVM("hlt\n");
+      dvm.runBytes();
     });
 
-    beforeEach(function () {
-      interpreter.reset();
+    it('jumps', function () {
+      let dvm = createDVM(`
+      jmp $+0x0C
+      hlt
+      mov eax, 3
+      jmp $-0x10
+      mov eax, 2
+      hlt\n`);
+
+      dvm.runBytes();
+      expect(dvm.registers["eax"]).to.equal(3);
+
+      dvm = createDVM(`
+      jmp 0x8000000C
+      hlt
+      mov eax, 3
+      jmp 0x80000008
+      mov eax, 2
+      hlt\n`);
+
+      dvm.runBytes();
+      expect(dvm.registers["eax"]).to.equal(3);
+
+      dvm = createDVM(`
+      jmp afterHalt
+      lbl beforeHalt:
+      hlt
+      lbl afterHalt:
+      mov eax, 3
+      jmp beforeHalt
+      mov eax, 2
+      hlt\n`);
+
+      dvm.runBytes();
+      expect(dvm.registers["eax"]).to.equal(3);
     });
 
-    it('creates labels', function () {
-      interpreter.runLine('lbl func:');
+    it('moves numbers', function () {
+      let dvm = createDVM(`
+      mov eax, 0x01
+      mov ebx, eax
+      mov dword [eax], eax
+      mov ecx, dword [eax]
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.labels).to.deep.equal({ 'func': interpreter.dvm.code.length - 1 });
+      expect(dvm.registers["eax"]).to.equal(1);
+      expect(dvm.registers["ebx"]).to.equal(1);
+      expect(dvm.memory.memory[1]).to.deep.equal({ address: 1, data: [0, 0, 0, 1] });
+      expect(dvm.registers["ecx"]).to.equal(1);
     });
 
-    it('jumps to labels', function () {
-      interpreter.runLine('mov eax, 0');
-      interpreter.runLine('int 255');
-      interpreter.runLine('jmp start');
-      interpreter.runLine('lbl move:');
-      interpreter.runLine('mov eax, 5');
-      expect(interpreter.dvm.registers['eax']).to.equal(0);
+    it('adds and subtracts numbers', function () {
+      let dvm = createDVM(`
+      mov eax, 0x01
+      add eax, 0x02
+      mov ebx, 0x02
+      mov ecx, 0x03
+      add ebx, ecx
+      mov ecx, 0x01
+      mov edx, 0xFFFFFFFE
+      add ecx, edx
+      mov edx, ecx
+      add edx, edx
+      hlt\n`);
+      dvm.runBytes();
 
-      interpreter.runLine('jmp end');
-      interpreter.runLine('lbl start:');
-      interpreter.runLine('jmp move');
-      interpreter.runLine('lbl end:');
-      interpreter.runLine('int 255');
-      expect(interpreter.dvm.registers['eax']).to.equal(5);
+      expect(dvm.registers["eax"]).to.equal(3);
+      expect(dvm.registers["ebx"]).to.equal(5);
+      expect(dvm.registers["ecx"]).to.equal(0xFFFFFFFF);
+      expect(dvm.registers["edx"]).to.equal(0xFFFFFFFE);
+      expect(dvm.registers.carry_flag).to.equal(1);
+
+      dvm = createDVM(`
+      mov eax, 0x02
+      sub eax, 0x01
+      mov ebx, 0x04
+      mov ecx, 0x02
+      sub ebx, ecx
+      mov edx, 0x02
+      sub ecx, edx
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers["eax"]).to.equal(1);
+      expect(dvm.registers["ebx"]).to.equal(2);
+      expect(dvm.registers["ecx"]).to.equal(0);
     });
 
-    it('moves values around', function () {
-      interpreter.runLine('mov eax, 0xF0');
+    it('multiplies and divides numbers', function () {
+      let dvm = createDVM(`
+      mov eax, 0x02
+      mul 0x06
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers['eax']).to.equal(0xF0);
+      expect(dvm.registers["eax"]).to.equal(12);
 
-      interpreter.runLine('mov byte [eax + 0x0F], 0xFC');
+      dvm = createDVM(`
+      mov eax, 0x02
+      mov ebx, 0x06
+      mul ebx
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.memory.memory).to.deep.equal([{ address: 0xFF, data: [0xFC] }]);
+      expect(dvm.registers["eax"]).to.equal(12);
+
+      dvm = createDVM(`
+      mov eax, 0xFFFFFFFF
+      mov ebx, 0x02
+      mul ebx
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers["eax"]).to.equal(0xFFFFFFFE);
+      expect(dvm.registers.carry_flag).to.equal(1);
+
+      dvm = createDVM(`
+      mov eax, 0x1F
+      div 0x05
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers["eax"]).to.equal(6);
+      expect(dvm.registers["edx"]).to.equal(1);
+
+      dvm = createDVM(`
+      mov eax, 0x1F
+      mov ebx, 0x05
+      div ebx
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers["eax"]).to.equal(6);
+      expect(dvm.registers["edx"]).to.equal(1);
     });
 
-    it('adds and subtracts values', function () {
-      interpreter.runLine('mov eax, 0');
-      interpreter.runLine('add eax, 1');
+    it('bitwise manipulates', function () {
+      let dvm = createDVM(`
+      mov eax, 0xFE
+      mov ebx, 0x01
+      and eax, ebx
+      and ebx, 0x21
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers['eax']).to.equal(1);
+      expect(dvm.registers["eax"]).to.equal(0);
+      expect(dvm.registers["ebx"]).to.equal(1);
 
-      interpreter.runLine('add eax, eax');
+      dvm = createDVM(`
+      mov eax, 0xFE
+      mov ebx, 0x01
+      or eax, ebx
+      or ebx, 0x20
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers['eax']).to.equal(2);
+      expect(dvm.registers["eax"]).to.equal(0xFF);
+      expect(dvm.registers["ebx"]).to.equal(0x21);
 
-      interpreter.runLine('mov ebx, 1');
-      interpreter.runLine('sub eax, ebx');
+      dvm = createDVM(`
+      mov eax, 0x3
+      mov ebx, 0x2
+      xor eax, ebx
+      xor ebx, 0x4
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers['eax']).to.equal(1);
-
-      interpreter.runLine('mov ebx, 3');
-      interpreter.runLine('sub eax, ebx');
-
-      expect(interpreter.dvm.registers['eax']).to.equal(0);
-    });
-
-    it('multiplies and divides values', function () {
-      interpreter.runLine('mov eax, 5');
-      interpreter.runLine('mul 6');
-
-      expect(interpreter.dvm.registers['eax']).to.equal(30);
-
-      interpreter.runLine('mov eax, 5');
-      interpreter.runLine('mov ebx, 6');
-      interpreter.runLine('mul ebx');
-
-      expect(interpreter.dvm.registers['eax']).to.equal(30);
-
-      interpreter.runLine('mov eax, 30');
-      interpreter.runLine('div 5');
-
-      expect(interpreter.dvm.registers['eax']).to.equal(6);
-      expect(interpreter.dvm.registers['edx']).to.equal(0);
-
-      interpreter.runLine('mov eax, 30');
-      interpreter.runLine('div 4');
-
-      expect(interpreter.dvm.registers['eax']).to.equal(7);
-      expect(interpreter.dvm.registers['edx']).to.equal(2);
-    });
-
-    it('performs bitwise operations', function () {
-      interpreter.runLine('mov eax, 0xDEADBEEF');
-      interpreter.runLine('mov ebx, 0xFF00FF00');
-      interpreter.runLine('and eax, ebx');
-
-      expect(interpreter.dvm.registers['eax']).to.equal(0xDE00BE00);
-
-      interpreter.runLine('mov eax, 0xDEADBEEF');
-      interpreter.runLine('mov ebx, 0xFF00FF00');
-      interpreter.runLine('or eax, ebx');
-
-      expect(interpreter.dvm.registers['eax']).to.equal(0xFFADFFEF);
-
-      interpreter.runLine('mov eax, 0x7EADBEEF');
-      interpreter.runLine('mov ebx, 0xFF00FF00');
-      interpreter.runLine('xor eax, ebx');
-
-      expect(interpreter.dvm.registers['eax']).to.equal(0x81AD41EF);
+      expect(dvm.registers["eax"]).to.equal(1);
+      expect(dvm.registers["ebx"]).to.equal(6);
     });
 
     it('negates registers', function () {
-      interpreter.runLine('mov eax, 0xDEADBEEF');
-      interpreter.runLine('neg eax');
+      let dvm = createDVM(`
+      mov eax, 0xFE
+      neg eax
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers['eax']).to.equal(559038736);
+      expect(dvm.registers["eax"]).to.equal(0xFFFFFF01);
     });
 
-    it('pushes and pops', function () {
-      interpreter.runLine('mov eax, 0xDEADBEEF');
-      interpreter.runLine('push eax');
+    it('pushes values', function () {
+      let dvm = createDVM(`
+      mov eax, 0xDEADBEEF
+      push eax
+      push 0xDEADBEEF
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.memory.memory).to.deep.equal([{ address: 0xFFFFFFFF - 4, data: [0xDE, 0xAD, 0xBE, 0xEF] }]);
-
-      interpreter.runLine('pop ebx');
-
-      expect(interpreter.dvm.registers['ebx']).to.equal(0xDEADBEEF);
+      expect(dvm.registers.getSP()).to.equal(0xFFFFFFFF - 8);
+      expect(dvm.memory.memory[1].data).to.deep.equal([0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF]);
     });
 
-    it('calls labels', function () {
-      interpreter.runLine('mov eax, 0');
-      interpreter.runLine('int 255');
-      interpreter.runLine('call start');
-      interpreter.runLine('mov eax, 6');
-      expect(interpreter.dvm.registers['eax']).to.equal(0);
+    it('pops values', function () {
+      let dvm = createDVM(`
+      push 0xDEADBEEF
+      pop eax
+      hlt\n`);
+      dvm.runBytes();
 
-      interpreter.runLine('lbl move:');
-      interpreter.runLine('mov eax, 5');
-      interpreter.runLine('call end');
-      interpreter.runLine('lbl start:');
-      interpreter.runLine('call move');
-      interpreter.runLine('lbl end:');
-      interpreter.runLine('int 255');
-      expect(interpreter.dvm.registers['eax']).to.equal(5);
+      expect(dvm.registers.getSP()).to.equal(0xFFFFFFFF);
+      expect(dvm.registers["eax"]).to.equal(0xDEADBEEF);
     });
 
-    it('returns from labels', function () {
-      interpreter.runLine('mov eax, 0');
-      interpreter.runLine('mov ebx, 0');
-      interpreter.runLine('mov ecx, 0');
-      interpreter.runLine('int 255');
-      interpreter.runLine('jmp start');
-      interpreter.runLine('lbl move:');
-      interpreter.runLine('mov eax, 5');
-      expect(interpreter.dvm.registers['eax']).to.equal(0);
+    it('calls', function () {
+      let dvm = createDVM(`
+      mov eax, 0x03
+      call $ + 20
+      mov eax, 0x02
+      hlt\n`);
+      dvm.runBytes();
 
-      interpreter.runLine('ret');
-      interpreter.runLine('lbl start:');
-      interpreter.runLine('call move');
-      interpreter.runLine('mov ebx, 6');
-      expect(interpreter.dvm.registers['ebx']).to.equal(0);
+      expect(dvm.registers.getSP()).to.equal(0xFFFFFFFF - 4);
+      expect(dvm.registers["eax"]).to.equal(3);
+      expect(dvm.memory.readAddress(dvm.registers.getSP(), 'dwrd')).to.equal(0x80000014);
+    });
 
-      interpreter.runLine('mov ecx, 7');
-      expect(interpreter.dvm.registers['ecx']).to.equal(0);
+    it('returns', function () {
+      let dvm = createDVM(`
+      push 0x04
+      call double
+      pop eax
+      mul 2
+      jmp done
+      lbl double:
+        pop ebx
+        pop eax
+        mul 2
+        push eax
+        push ebx
+        ret
+      lbl done:
+      hlt\n`);
+      dvm.runBytes();
 
-      interpreter.runLine('int 255');
-      expect(interpreter.dvm.registers['eax']).to.equal(5);
-      expect(interpreter.dvm.registers['ebx']).to.equal(6);
-      expect(interpreter.dvm.registers['ecx']).to.equal(7);
+      expect(dvm.registers["eax"]).to.equal(16);
+
+      dvm = createDVM(`
+      push 0x04
+      call double
+      pop eax
+      mul 2
+      jmp done
+      lbl double:
+        push ebp
+        mov ebp, esp
+        mov eax, dword [ebp + 8]
+        mul 2
+        mov dword [ebp + 8], eax
+        pop ebp
+        ret
+      lbl done:
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers["eax"]).to.equal(16);
     });
 
     it('compares values', function () {
-      interpreter.runLine('mov eax, 1');
-      interpreter.runLine('cmp eax, 0');
+      let dvm = createDVM(`
+      mov eax, 0x01
+      cmp eax, 0x00
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers.compare_flag).to.equal(1);
+      expect(dvm.registers.compare_flag).to.equal(1);
 
-      interpreter.runLine('mov eax, 1');
-      interpreter.runLine('cmp eax, 2');
+      dvm = createDVM(`
+      mov eax, 0x01
+      cmp eax, 0x02
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers.compare_flag).to.equal(-1);
+      expect(dvm.registers.compare_flag).to.equal(-1);
 
-      interpreter.runLine('mov eax, 0');
-      interpreter.runLine('cmp eax, 0');
+      dvm = createDVM(`
+      mov eax, 0x01
+      cmp eax, 0x01
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers.compare_flag).to.equal(0);
+      expect(dvm.registers.compare_flag).to.equal(0);
 
-      interpreter.runLine('mov eax, 1');
-      interpreter.runLine('mov ebx, 0');
-      interpreter.runLine('cmp eax, ebx');
+      dvm = createDVM(`
+      mov eax, 0x01
+      mov ebx, 0x00
+      cmp eax, ebx
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers.compare_flag).to.equal(1);
+      expect(dvm.registers.compare_flag).to.equal(1);
 
-      interpreter.runLine('mov eax, 0');
-      interpreter.runLine('mov ebx, 1');
-      interpreter.runLine('cmp eax, ebx');
+      dvm = createDVM(`
+      mov eax, 0x01
+      mov ebx, 0x02
+      cmp eax, ebx
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers.compare_flag).to.equal(-1);
+      expect(dvm.registers.compare_flag).to.equal(-1);
 
-      interpreter.runLine('mov eax, 0');
-      interpreter.runLine('mov ebx, 0');
-      interpreter.runLine('cmp eax, ebx');
+      dvm = createDVM(`
+      mov eax, 0x01
+      mov ebx, 0x01
+      cmp eax, ebx
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers.compare_flag).to.equal(0);
+      expect(dvm.registers.compare_flag).to.equal(0);
+
+      dvm = createDVM(`
+      mov eax, 0x01
+      mov dword [eax], 0x00
+      cmp eax, dword [eax]
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers.compare_flag).to.equal(1);
+
+      dvm = createDVM(`
+      mov eax, 0x01
+      mov dword [eax], 0x02
+      cmp eax, dword [eax]
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers.compare_flag).to.equal(-1);
+
+      dvm = createDVM(`
+      mov eax, 0x01
+      mov dword [eax], 0x01
+      cmp eax, dword [eax]
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers.compare_flag).to.equal(0);
     });
 
-    it('shifts values', function () {
-      interpreter.runLine('mov eax, 0xDEAD');
-      interpreter.runLine('shl eax, 0x10');
+    it('shifts', function () {
+      let dvm = createDVM(`
+      mov eax, 0x02
+      shr eax, 0x01
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers['eax']).to.equal(0xDEAD0000);
+      expect(dvm.registers["eax"]).to.equal(1);
 
-      interpreter.runLine('mov eax, 0xDEAD');
-      interpreter.runLine('shr eax, 0x08');
+      dvm = createDVM(`
+      mov eax, 0x02
+      mov ebx, 0x01
+      shr eax, ebx
+      hlt\n`);
+      dvm.runBytes();
 
-      expect(interpreter.dvm.registers['eax']).to.equal(0xDE);
+      expect(dvm.registers["eax"]).to.equal(1);
+
+      dvm = createDVM(`
+      mov eax, 0x02
+      shl eax, 0x01
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers["eax"]).to.equal(4);
+
+      dvm = createDVM(`
+      mov eax, 0x02
+      mov ebx, 0x01
+      shl eax, ebx
+      hlt\n`);
+      dvm.runBytes();
+
+      expect(dvm.registers["eax"]).to.equal(4);
     });
 
-    it('performs interrupts', function () {
-      interpreter.runLine('mov eax, 0xDEAD');
-      expect(interpreter.dvm.registers['eax']).to.equal(0xDEAD);
+    it('complicated moves', function () {
+      let dvm = createDVM(`
+      mov dword [eax + 4], 8
+      mov ebx, dword [eax + 4]
+      hlt\n`);
+      dvm.runBytes();
 
-      interpreter.runLine('int 255');
-      interpreter.runLine('and eax, 0xFF00');
-      expect(interpreter.dvm.registers['eax']).to.equal(0xDEAD);
-
-      interpreter.runLine('int 255');
-      expect(interpreter.dvm.registers['eax']).to.equal(0xDE00);
-
-      interpreter.runLine('add eax, 0xAD');
-      expect(interpreter.dvm.registers['eax']).to.equal(0xDEAD);
-    });
-
-    after(function () {
-      interpreter.dvm.stop();
+      expect(dvm.registers["ebx"]).to.equal(8);
+      expect(dvm.memory.readAddress(4, 'dwrd')).to.equal(8)
     });
   });
 
@@ -310,72 +475,6 @@ describe('DVM', function () {
       expect(dvm.canJump('jge')).to.equal(false);
       expect(dvm.canJump('jl')).to.equal(true);
       expect(dvm.canJump('jle')).to.equal(true);
-    });
-
-    it('parses numbers', function () {
-      expect(dvm.parseNumber({
-        type: 'number',
-        children: [{ type: 'HEXNUM', token: '0xFFFFFFFF' }]
-      })).to.equal(0xFFFFFFFF);
-
-      expect(dvm.parseNumber({
-        type: 'number',
-        children: [{ type: 'NUMBER', token: '123' }]
-      })).to.equal(123);
-
-      expect(dvm.parseNumber({ type: 'NUMBER', token: '123' })).to.equal(123);
-
-      expect(dvm.parseNumber.bind(dvm, {
-        type: 'number',
-        children: [{ type: 'HEXNUM', token: '0xFFFFFFFFF' }]
-      })).to.throw(`Value too large: ${0xFFFFFFFFF}`);
-    });
-
-    it('parses a number of register value', function () {
-      expect(dvm.getValue({ type: 'REGISTER', token: 'eax' })).to.equal(0);
-
-      expect(dvm.getValue({
-        type: 'number',
-        children: [{ type: 'HEXNUM', children: [], token: '0xFF' }],
-        token: null
-      })).to.equal(0xFF);
-    });
-
-    it('parses addresses', function () {
-      dvm.registers['eax'] = 0xFF;
-
-      expect(dvm.getBaseAddress({
-        type: 'address',
-        children: [
-          {type: 'TYPE', children: [], token: 'dword'},
-          {type: 'LSQUARE', children: [], token: '['},
-          {type: 'REGISTER', children: [], token: 'eax'},
-          {type: 'RSQUARE', children: [], token: ']'}
-        ]
-      })).to.equal(0xFF);
-
-      dvm.registers['eax'] = 0xF0;
-      expect(dvm.getBaseAddress({
-        type: 'address',
-        children: [
-          {type: 'TYPE', children: [], token: 'dword'},
-          {type: 'LSQUARE', children: [], token: '['},
-          {type: 'REGISTER', children: [], token: 'eax'},
-          {type: 'sum_address', children: [
-            {type: 'SUM', children: [], token: '+'},
-            {
-              type: 'number',
-              children: [{ type: 'HEXNUM', children: [], token: '0x0F' }],
-              token: null
-            }
-          ], token: null},
-          {type: 'RSQUARE', children: [], token: ']'}
-        ]
-      })).to.equal(0xFF);
-    });
-
-    after(function () {
-      dvm.stop();
     });
   });
 });

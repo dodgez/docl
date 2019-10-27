@@ -6,7 +6,7 @@
     },
     {
       "name": "line",
-      "expr": "(label|jump|call|RET|compare|move|summation|multiply|bitwise|negate|shift|push|pop|interrupt|NOP) (EOL)+"
+      "expr": "(label|jump|call|RET|compare|move|summation|multiply|bitwise|negate|shift|push|pop|interrupt|NOP|HLT) (EOL)+"
     },
     {
       "name": "label",
@@ -22,7 +22,7 @@
     },
     {
       "name": "call",
-      "expr": "CALL ID"
+      "expr": "CALL (ID|number|relative_jump)"
     },
     {
       "name": "compare",
@@ -30,7 +30,7 @@
     },
     {
       "name": "move",
-      "expr": "MOV (REGISTER|address) COMMA (REGISTER|address|number)"
+      "expr": "MOV (REGISTER|address) COMMA (REGISTER|number|address)"
     },
     {
       "name": "summation",
@@ -165,6 +165,10 @@
     {
       "name": "NOP",
       "expr": "nop"
+    },
+    {
+      "name": "HLT",
+      "expr": "hlt"
     },
     {
       "name": "HEXNUM",

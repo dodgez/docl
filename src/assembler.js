@@ -1,46 +1,22 @@
 function assemble(nodes) {
   let start_address = 0x80000000;
   let labels = {};
-
-  for (let index = 0; index < nodes.length; ++index) {
-    let line = nodes[index];
-    if (line.type == "EOL") continue;
-    let node = line.children[0];
-    if (node.type == "label") {
-      labels[node.children[1].token] = start_address + index;
-    }
-  }
-
   let code = [];
   for (let index = 0; index < nodes.length; ++index) {
     let line = nodes[index];
     if (line.type == "EOL") continue;
     let node = line.children[0];
     let op;
-    let address;
     switch (node.type) {
       case "label":
+        let bytes = 0;
+        for (let line of code) {
+          bytes += line.length * 4;
+        }
+        labels[node.children[1].token] = start_address + bytes;
         break;
       case "jump":
-        switch (node.children[1].type) {
-          case "ID":
-            address = labels[node.children[1].token];
-            break;
-          case "number":
-            address = parseNumber(node.children[1]);
-            break;
-          case "relative_jump":
-            let jump = node.children[1];
-            let rel = 0;
-            if (jump.children.length > 1) {
-              let sum_address = jump.children[1];
-              rel = parseNumber(sum_address.children[1]);
-              if (sum_address.children[0].token == "-") rel = -rel;
-            }
-            address = start_address + index + rel;
-            break;
-        }
-        code.push([node.children[0].token, address]);
+        code.push([node.children[0].token, node]);
         break;
       case "move":
         let dest = node.children[1];
@@ -66,15 +42,19 @@ function assemble(nodes) {
               } else {
                 code.push(["sub", source_register, num]);
               }
-
-              source_val = [source.children[0].token, source_register];
             }
+
+            source_val = [source.children[0].token, source_register];
             break;
         }
         switch (dest.type) {
           case "REGISTER":
             if (source.type == "address") {
-              code.push(["mrva", dest.token, source_val[0], source_val[1]]);
+              let size = source_val[0];
+              if (size == "dword") {
+                size = "dwrd";
+              }
+              code.push(["mrva", dest.token, size, source_val[1]]);
             } else if (source.type == "number") {
               code.push(["mrv", dest.token, source_val]);
             } else if (source.type == "REGISTER") {
@@ -95,12 +75,16 @@ function assemble(nodes) {
               }
             }
 
-            if (source.type == "addressa") {
+            let size = dest.children[0].token;
+              if (size == "dword") {
+                size = "dwrd";
+              }
+            if (source.type == "address") {
               throw new Error("Cannot move address to address");
             } else if (source.type == "number") {
-              code.push(["mav", dest.children[0].token, dest_register, source_val])
+              code.push(["mav", size, dest_register, source_val])
             } else if (source.type == "REGISTER") {
-              code.push(["mavr", dest.children[0].token, dest_register, source_val])
+              code.push(["mavr", size, dest_register, source_val])
             }
 
             if (dest.children.length > 4) code.push(["pop", dest_register]);
@@ -146,25 +130,7 @@ function assemble(nodes) {
         code.push([node.children[0].token, node.children[1].token]);
         break;
       case "call":
-        switch (node.children[1].type) {
-          case "ID":
-            address = labels[node.children[1].token];
-            break;
-          case "number":
-            address = parseNumber(node.children[1]);
-            break;
-          case "relative_jump":
-            let jump = node.children[1];
-            let rel = 0;
-            if (jump.children.length > 1) {
-              let sum_address = jump.children[1];
-              rel = parseNumber(sum_address.children[1]);
-              if (sum_address.children[0].token == "-") rel = -rel;
-            }
-            address = start_address + index + rel;
-            break;
-        }
-        code.push([node.children[0].token, address]);
+        code.push([node.children[0].token, node]);
         break;
       case "RET":
         code.push([node.token]);
@@ -192,7 +158,12 @@ function assemble(nodes) {
               }
             }
 
-            code.push([`${node.children[0].token}a`, node.children[1].token, address_part.children[0].token, register])
+            let size = address_part.children[0].token;
+            if (size == "dword") {
+              size = "dwrd";
+            }
+
+            code.push([`${node.children[0].token}a`, node.children[1].token, size, register])
 
             if (address_part.children.length > 4) code.push(["pop", register]);
             break;
@@ -210,10 +181,47 @@ function assemble(nodes) {
         code.push([node.children[0].token, parseNumber(node.children[1])]);
         break;
       case "NOP":
-        code.push([node.children[0].token]);
+        code.push([node.token]);
+        break;
+      case "HLT":
+        code.push([node.token]);
         break;
       default:
         throw new Error(`Unknown statement: ${node}`);
+    }
+  }
+
+  for (let line of code) {
+    switch (line[0]) {
+      case "call":
+      case "jmp":
+      case "jg":
+      case "jge":
+      case "jl":
+      case "jle":
+      case "je":
+      case "jne":
+        let node = line[1];
+        switch (node.children[1].type) {
+          case "ID":
+            address = labels[node.children[1].token];
+            break;
+          case "number":
+            address = parseNumber(node.children[1]);
+            break;
+          case "relative_jump":
+            let jump = node.children[1];
+            let rel = 0;
+            if (jump.children.length > 1) {
+              let sum_address = jump.children[1];
+              rel = parseNumber(sum_address.children[1]);
+              if (sum_address.children[0].token == "-") rel = -rel;
+            }
+            address = start_address + index + rel;
+            break;
+        }
+        line[1] = address;
+        break;
     }
   }
 
@@ -230,7 +238,7 @@ function getCodeBytes(code) {
           bytes.push(piece.charCodeAt(0));
           bytes.push(piece.charCodeAt(1));
           bytes.push(piece.charCodeAt(2));
-          bytes.push(piece.charCodeAt(3) ? piece.charCodeAt(3) : 0);
+          bytes.push(piece.charCodeAt(3) ? piece.charCodeAt(3) : 13);
           break;
         case "number":
           bytes.push((piece & 0xFF000000) >>> 24);

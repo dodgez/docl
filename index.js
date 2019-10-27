@@ -10,7 +10,7 @@ let input_file;
 let grammar_file = './grammar.json';
 
 program.version(package.version)
-  .arguments('[input file]')
+  .arguments('<input_file>')
   .action(function (file) {
     input_file = file;
   });

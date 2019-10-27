@@ -34,18 +34,18 @@ describe('Memory Controller', function () {
   it('can read a dword', function () {
     memory_controller.memory = [{ address: 0xFF, data: [0xDE, 0xAD, 0xBE, 0xEF] }];
 
-    expect(memory_controller.readAddress(0xFF, "dword")).to.equal(0xDEADBEEF);
+    expect(memory_controller.readAddress(0xFF, "dwrd")).to.equal(0xDEADBEEF);
   });
 
   it('can write a dword', function () {
-    memory_controller.writeAddress(0xFF, 0xDEADBEEF, "dword");
+    memory_controller.writeAddress(0xFF, 0xDEADBEEF, "dwrd");
 
     expect(memory_controller.memory[0]).to.deep.equal({ address: 0xFF, data: [0xDE, 0xAD, 0xBE, 0xEF] });
   });
 
   it('can absorb a write within 0xFF bytes', function () {
     memory_controller.memory = [{ address: 0x100, data: [0xDE, 0xAD, 0xBE, 0xEF] }];
-    memory_controller.writeAddress(0xFC, 0xDEADBEEF, "dword");
+    memory_controller.writeAddress(0xFC, 0xDEADBEEF, "dwrd");
 
     expect(memory_controller.memory[0]).to.deep.equal({ address: 0xFC, data: [0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF] });
   });

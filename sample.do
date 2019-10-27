@@ -20,16 +20,19 @@ lbl loop:
   jmp loop
 
 lbl next:
-  pop eax
-  pop ebx
+  push ebp
+  mov ebp, esp
+  mov eax, dword [ebp + 8]
+  mov ebx, dword [ebp + 12]
   add eax, ebx
-  push ebx
-  push eax
+  mov dword [ebp + 12], ebx
+  mov dword [ebp + 8], eax
+  pop ebp
   ret
 
 lbl done:
-mov esi, 0
-pop eax
-mov edx, 2
-int 1
-hlt
+  mov esi, 0
+  pop eax
+  mov edx, 2
+  int 1
+  hlt

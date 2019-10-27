@@ -26,6 +26,16 @@ class Registers {
     this["eip"] = address;
   }
 
+  getSP() {
+    return this["esp"];
+  }
+  decSP() {
+    this["esp"] -= this.max_size;
+  }
+  incSP() {
+    this["esp"] += this.max_size;
+  }
+
   getFirstParamRegister() {
     return this["eax"];
   }
@@ -38,13 +48,6 @@ class Registers {
   }
   setSecondParamRegister(value) {
     this["edx"] = value;
-  }
-
-  getStackPointer() {
-    return this["esp"];
-  }
-  setStackPointer(value) {
-    this["esp"] = value;
   }
 
   getFirstStringIndex() {
